@@ -1,0 +1,66 @@
+version: 2
+
+semantic_models:
+  - name: orders
+    description: "Fact table for orders containing measures, dimensions & entities for the semantic layer."
+    model: ref('fct_orders')  # Ensure fct_orders.sql exists in your models directory with columns: order_id, customer_id, order_date, order_status, order_channel, order_amount
+    defaults:
+      agg_time_dimension: order_date
+
+    entities:
+      - name: order_id
+        type: primary
+        expr: order_id
+
+      - name: customer_id
+        type: foreign
+        expr: customer_id
+
+    dimensions:
+      - name: order_date
+        type: time
+        expr: order_date
+        type_params:
+          time_granularity: day
+
+      - name: order_status
+        type: categorical
+        expr: order_status
+
+      - name: order_channel
+        type: categorical
+        expr: order_channel
+
+    measures:
+      - name: order_total
+        description: "Total revenue per order"
+        agg: sum
+        expr: order_amount
+
+      - name: order_count
+        description: "Number of orders"
+        agg: count_distinct
+        expr: order_id
+
+      - name: customers_with_orders
+        description: "Unique customers placing orders"
+        agg: count_distinct
+        expr: customer_id
+
+
+metrics:
+  - name: total_revenue
+    label: "Total Revenue"
+    description: "Sum of all order amounts"
+    type: simple
+    type_params:
+      measure: order_total
+
+  - name: total_orders
+    label: "Total Orders"
+    description: "Total number of orders"
+    type: simple
+    type_params:
+      measure: order_count
+
+

@@ -1,0 +1,11 @@
+version: 2
+
+# Try using these source definitions instead!
+sources:
+  - name: semantic_data
+    database: DEV_DATABASE
+    schema: RAW_LAYER
+    tables:
+      - name: ORDERS
+      - name: CUSTOMER
+      - name: LINEITEM
