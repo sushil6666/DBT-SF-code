@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_customer_data__customers
+    description: "Staged customer data with transformations applied"
+    columns:
+      - name: is_vip_member
+        description: "Boolean indicating if customer is VIP member"
+        tests:
+          - not_null
+          - unique:
+              config:
+                severity: warn
+          - accepted_values:
+              values: [true, false]
+
+      - name: marketing_opt_in
+        description: "Boolean indicating if customer opted into marketing"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: gender
+        description: "Customer gender (transformed to abbreviated codes)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['M', 'F', 'Other']
