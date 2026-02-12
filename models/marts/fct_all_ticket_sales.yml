@@ -1,0 +1,131 @@
+version: 2
+
+models:
+  - name: fct_all_ticket_sales
+    description: "Fact table containing all ticket sales from both online and physical channels with business rule calculations"
+    config:
+      tags: ["finance", "fact_table"]
+
+    columns:
+      - name: sale_id
+        description: "Unique identifier for each sale transaction"
+        tests:
+          - unique
+          - not_null
+
+      - name: customer_id
+        description: "Foreign key to customer dimension"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+
+      - name: ticket_id
+        description: "Foreign key to ticket type dimension"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_ticket_types')
+              field: ticket_id
+
+      - name: purchase_date
+        description: "Date when the ticket was purchased"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_dates')
+              field: date_day
+
+      - name: visit_date
+        description: "Date when the customer plans to visit the park"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_dates')
+              field: date_day
+
+      - name: purchase_timestamp
+        description: "Exact timestamp of the purchase"
+        tests:
+          - not_null
+
+      - name: ticket_price
+        description: "Original price of the ticket"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: discount_percent
+        description: "Discount percentage applied to the ticket"
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+
+      - name: visit_hour
+        description: "Hour of the day for the planned visit"
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 23
+
+      - name: payment_method
+        description: "Method used for payment"
+        tests:
+          - not_null
+
+      - name: purchase_channel
+        description: "Channel through which the ticket was purchased (online/physical)"
+        tests:
+          - not_null
+
+      - name: created_at
+        description: "Record creation timestamp"
+        tests:
+          - not_null
+
+      - name: updated_at
+        description: "Record last update timestamp"
+        tests:
+          - not_null
+
+      - name: is_online
+        description: "Boolean indicating if the sale was made online"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      # Business rule calculated fields
+      - name: discount_category
+        description: "Categorized discount level"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['High Discount', 'Medium Discount', 'Low Discount', 'No Discount']
+
+      - name: same_day_visit
+        description: "Boolean indicating if visit is on same day as purchase"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: advance_purchase
+        description: "Boolean indicating if ticket was purchased in advance"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: visit_time_category
+        description: "Categorized visit time of day"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Evening', 'Afternoon', 'Morning', 'Night']

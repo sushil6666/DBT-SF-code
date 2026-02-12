@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: dim_dates
+    description: "Date dimension table with business logic for weekends and Halloween"
+    config:
+      tags: ["master_data", "dimension"]
+    columns:
+      - name: date_day
+        description: "Primary key - the date"
+        tests:
+          - unique
+          - not_null
+
+      - name: year_number
+        description: "Year number extracted from date"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 2020
+                max_value: 2026
+
+      - name: month_number
+        description: "Month number (1-12) extracted from date"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 12
+
+      - name: day_number
+        description: "Day number (1-31) extracted from date"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 31
+
+      - name: is_weekend
+        description: "Boolean indicating if the date falls on a weekend (Saturday or Sunday)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: is_halloween
+        description: "Boolean indicating if the date is Halloween (October 31st)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: days_to_halloween
+        description: "Number of days until the next Halloween (can be negative if Halloween has passed)"
+        tests:
+          - not_null
