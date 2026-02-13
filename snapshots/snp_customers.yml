@@ -1,7 +1,8 @@
 snapshots:
   - name: snp_customers
-    relation: source('customer_data', 'customers')
+    relation: source('DBT_CLOUD', 'customers')
     config:
       strategy: timestamp
       unique_key: customer_id
       updated_at: updated_at
+      
