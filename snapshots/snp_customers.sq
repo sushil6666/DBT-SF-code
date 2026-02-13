@@ -1,0 +1,15 @@
+{% snapshot snp_customers %}
+
+{{
+    config(
+      target_database='SF_TEST',
+      target_schema='DBT_CLOUD',
+      unique_key='customer_id',
+      strategy='timestamp',
+      updated_at='updated_at',
+    )
+}}
+
+select * from {{ source('customer_data', 'customers') }}
+
+{% endsnapshot %}
