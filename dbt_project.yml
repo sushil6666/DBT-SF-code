@@ -1,0 +1,74 @@
+# Name your project! Project names should contain only lowercase characters
+# and underscores. A good package is named after the intended use case.
+name: 'dbt_practice'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'dbt_batch'
+
+# These configurations specify where dbt should look for different types of files.
+model-paths:    ["models"]
+analysis-paths: ["analyses"]
+test-paths:     ["tests"]
+seed-paths:     ["seeds"]
+macro-paths:    ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+vars:
+  date_spine_start: '2020-01-01'
+  date_spine_end:   '2026-12-31'
+
+seeds:
+  dbt_practice:
+    +schema: raw
+    +quote_columns: false
+
+snapshots:
+  dbt_practice:
+    +target_schema: snapshots
+
+models:
+  dbt_practice:
+
+    +query_tag: 'query_from_dbt'
+
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ['staging']
+
+      customer_data:
+        +tags: ['customer_data']
+      park_assets:
+        +tags: ['park_assets']
+      sales:
+        +tags: ['sales']
+      external_haunted:
+        +tags: ['external_haunted']
+      feedback:
+        +tags: ['feedback']
+
+    intermediate:
+      +materialized: ephemeral
+      +schema: intermediate
+      +tags: ['intermediate']
+
+    marts:
+      +materialized: table
+      +schema: marts
+      +tags: ['marts']
+
+      core:
+        +tags: ['core']
+      analytics:
+        +tags: ['analytics']
+
+    utilities:
+      +materialized: table
+      +schema: utilities
+      +tags: ['utilities']

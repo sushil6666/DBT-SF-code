@@ -1,0 +1,545 @@
+version: 2
+
+sources:
+
+  - name: raw
+    description: >
+      Raw operational data for Theme Park Analytics, loaded via dbt seeds.
+      Represents the unmodified source of truth for all park data before
+      any cleaning or transformation is applied in the staging layer.
+    database: "{{ target.database }}"
+    schema: raw
+    loader: dbt_seed
+
+    tables:
+
+      - name: raw_customers
+        description: >
+          Guest master records. Each row represents one customer account.
+          Contains PII — handle with care.
+        columns:
+          - name: customer_id
+            description: Surrogate primary key for a customer account
+            tests:
+              - unique
+              - not_null
+          - name: first_name
+            description: Customer given name
+            tests:
+              - not_null
+          - name: last_name
+            description: Customer family name
+            tests:
+              - not_null
+          - name: email
+            description: Customer email address — must be unique across all accounts
+            tests:
+              - unique
+              - not_null
+          - name: phone
+            description: Customer contact phone number
+          - name: date_of_birth
+            description: Customer date of birth (YYYY-MM-DD)
+          - name: membership_type
+            description: Membership tier assigned to the customer
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['standard', 'silver', 'gold', 'platinum']
+          - name: signup_channel
+            description: Channel through which the customer registered
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['online', 'in_park', 'phone', 'referral']
+          - name: created_at
+            description: Timestamp when the customer account was first created
+            tests:
+              - not_null
+          - name: is_active
+            description: Boolean flag indicating whether the account is currently active
+            tests:
+              - not_null
+
+      - name: raw_rides
+        description: >
+          Master catalog of all rides and attractions in the park.
+          Each row represents one physical ride asset.
+        columns:
+          - name: ride_id
+            description: Surrogate primary key for a ride
+            tests:
+              - unique
+              - not_null
+          - name: ride_name
+            description: Display name of the ride or attraction
+            tests:
+              - unique
+              - not_null
+          - name: ride_type
+            description: >
+              Physical category of the ride
+              (roller_coaster, dark_ride, drop_tower, water_ride, carousel, kiddie_ride)
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['roller_coaster', 'dark_ride', 'drop_tower',
+                             'water_ride', 'carousel', 'kiddie_ride']
+          - name: min_height_cm
+            description: Minimum rider height in centimetres. 0 means no restriction.
+          - name: thrill_level
+            description: Subjective thrill rating assigned by operations
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['low', 'medium', 'high', 'extreme']
+          - name: capacity_per_hour
+            description: Maximum number of riders the attraction can process per hour
+            tests:
+              - not_null
+          - name: zone
+            description: Park zone where the ride is located
+            tests:
+              - not_null
+          - name: is_haunted
+            description: Whether the ride belongs to the haunted/horror category
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['true', 'false']
+          - name: opened_date
+            description: Date the ride first opened to the public (YYYY-MM-DD)
+            tests:
+              - not_null
+          - name: status
+            description: Current operational status of the ride
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['active', 'maintenance', 'closed']
+          - name: avg_wait_minutes
+            description: Rolling average queue wait time in minutes
+
+      - name: raw_tickets
+        description: >
+          Ticket purchase records — one row per ticket transaction.
+          Links a customer to a specific visit date and ticket product.
+        columns:
+          - name: ticket_id
+            description: Surrogate primary key for a ticket purchase
+            tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: Foreign key to raw_customers
+            tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('raw', 'raw_customers')
+                    field: customer_id
+          - name: ticket_type
+            description: Product type purchased
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['day_pass', 'weekend_pass', 'annual_pass', 'group_pass']
+          - name: purchase_date
+            description: Date the ticket was purchased (YYYY-MM-DD)
+            tests:
+              - not_null
+          - name: visit_date
+            description: Date the ticket is valid for park entry (YYYY-MM-DD)
+            tests:
+              - not_null
+          - name: purchase_channel
+            description: Channel through which the ticket was purchased
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['online', 'in_park', 'kiosk', 'phone']
+          - name: base_price
+            description: Face value of the ticket before any discount
+            tests:
+              - not_null
+          - name: discount_amount
+            description: Monetary discount applied. 0.00 if none.
+            tests:
+              - not_null
+          - name: final_price
+            description: Amount the customer actually paid (base_price minus discount_amount)
+            tests:
+              - not_null
+          - name: promo_code
+            description: Promotional code applied at purchase. Null if none used.
+
+      - name: raw_sales_transactions
+        description: >
+          In-park point-of-sale transactions for food and merchandise.
+          One row per line item sold during a guest visit.
+        columns:
+          - name: transaction_id
+            description: Surrogate primary key for a sales transaction
+            tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: Foreign key to raw_customers
+            tests:
+              - not_null
+          - name: visit_date
+            description: Date of the visit when the purchase was made (YYYY-MM-DD)
+            tests:
+              - not_null
+          - name: category
+            description: High-level product category
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['food', 'merchandise', 'game', 'photo']
+          - name: item_name
+            description: Name of the product or item sold
+            tests:
+              - not_null
+          - name: quantity
+            description: Number of units purchased in this line item
+            tests:
+              - not_null
+          - name: unit_price
+            description: Price per unit at time of sale
+            tests:
+              - not_null
+          - name: total_amount
+            description: quantity multiplied by unit_price
+            tests:
+              - not_null
+          - name: payment_method
+            description: Method used to complete the transaction
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['credit_card', 'cash', 'kiosk', 'mobile']
+          - name: location
+            description: Name of the outlet or stand where the sale occurred
+            tests:
+              - not_null
+
+      - name: raw_employees
+        description: >
+          Employee roster including department, role, and compensation data.
+          Contains PII — handle with care.
+        columns:
+          - name: employee_id
+            description: Surrogate primary key for an employee record
+            tests:
+              - unique
+              - not_null
+          - name: first_name
+            description: Employee given name
+            tests:
+              - not_null
+          - name: last_name
+            description: Employee family name
+            tests:
+              - not_null
+          - name: department
+            description: Business unit the employee belongs to
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['operations', 'food_beverage', 'merchandise',
+                             'security', 'guest_services', 'maintenance']
+          - name: role
+            description: Job title within the department
+            tests:
+              - not_null
+          - name: hire_date
+            description: Date the employee was hired (YYYY-MM-DD)
+            tests:
+              - not_null
+          - name: hourly_rate
+            description: Current hourly compensation rate in USD
+            tests:
+              - not_null
+          - name: manager_id
+            description: >
+              Foreign key to the employee's direct manager in raw_employees.
+              Null for top-level managers.
+          - name: is_active
+            description: Whether the employee is currently employed
+            tests:
+              - not_null
+          - name: zone_assignment
+            description: Primary park zone the employee is assigned to
+
+      - name: raw_feedback
+        description: >
+          Guest satisfaction feedback submitted after visits.
+          One row per feedback submission.
+        columns:
+          - name: feedback_id
+            description: Surrogate primary key for a feedback record
+            tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: Foreign key to raw_customers
+            tests:
+              - not_null
+          - name: visit_date
+            description: Date of the visit the feedback refers to (YYYY-MM-DD)
+            tests:
+              - not_null
+          - name: ride_id
+            description: >
+              Foreign key to raw_rides if the feedback is ride-specific.
+              Null for general park feedback.
+          - name: rating
+            description: Overall satisfaction score from 1 (worst) to 5 (best)
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['1', '2', '3', '4', '5']
+          - name: category
+            description: Topic area the feedback relates to
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['ride', 'food', 'general', 'wait_times', 'staff', 'cleanliness']
+          - name: sentiment
+            description: Pre-classified sentiment label for the feedback comment
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['positive', 'neutral', 'negative']
+          - name: comments
+            description: Free-text comment submitted by the guest
+          - name: submitted_at
+            description: Timestamp when the feedback was submitted
+            tests:
+              - not_null
+
+      - name: raw_haunted_events
+        description: >
+          Seasonal and special haunted events run in partnership with
+          external organisations. One row per event booking.
+        columns:
+          - name: event_id
+            description: Surrogate primary key for a haunted event
+            tests:
+              - unique
+              - not_null
+          - name: event_name
+            description: Display name of the event
+            tests:
+              - unique
+              - not_null
+          - name: event_start_date
+            description: First day the event runs (YYYY-MM-DD)
+            tests:
+              - not_null
+          - name: event_end_date
+            description: Last day the event runs (YYYY-MM-DD)
+            tests:
+              - not_null
+          - name: event_type
+            description: Classification of the event cadence
+            tests:
+              - not_null
+              - accepted_values:
+                  arguments:
+                    values: ['seasonal', 'special']
+          - name: external_partner
+            description: Name of the external organisation delivering the event
+            tests:
+              - not_null
+          - name: tickets_allocated
+            description: Total number of tickets made available for the event
+            tests:
+              - not_null
+          - name: tickets_sold
+            description: Number of tickets that were actually purchased
+            tests:
+              - not_null
+          - name: revenue
+            description: Total gross revenue generated by the event in USD
+            tests:
+              - not_null
+          - name: description
+            description: Short human-readable summary of the event
+
+  # ── Haunted-house star schema sources ────────────────────────────────────────
+
+  - name: customer_data
+    description: Customer master records — mapped to RAW.raw_customers
+    database: "{{ target.database }}"
+    schema: RAW
+    tables:
+      - name: customers
+        identifier: raw_customers
+        description: Guest master records from raw_customers
+        columns:
+          - name: customer_id
+            tests: [unique, not_null]
+          - name: first_name
+            tests: [not_null]
+          - name: last_name
+            tests: [not_null]
+          - name: email
+            tests: [unique, not_null]
+
+  - name: park_assets
+    description: Ticket product catalog derived from raw_tickets
+    database: "{{ target.database }}"
+    schema: RAW
+    tables:
+      - name: ticket_types
+        identifier: raw_tickets
+        description: Ticket types derived from distinct ticket_type values in raw_tickets
+        columns:
+          - name: ticket_id
+            tests: [unique, not_null]
+          - name: base_price
+            tests: [not_null]
+
+  - name: sales
+    description: Ticket sales transactions split by purchase channel
+    database: "{{ target.database }}"
+    schema: RAW
+    tables:
+      - name: ticket_sales_online
+        identifier: raw_tickets
+        description: Online channel purchases filtered from raw_tickets
+        columns:
+          - name: ticket_id
+            tests: [unique, not_null]
+          - name: customer_id
+            tests: [not_null]
+          - name: visit_date
+            tests: [not_null]
+      - name: ticket_sales_physical
+        identifier: raw_tickets
+        description: In-person purchases filtered from raw_tickets
+        columns:
+          - name: ticket_id
+            tests: [unique, not_null]
+          - name: customer_id
+            tests: [not_null]
+          - name: visit_date
+            tests: [not_null]
+
+  - name: feedback
+    description: Visitor feedback — mapped to RAW.raw_feedback
+    database: "{{ target.database }}"
+    schema: RAW
+    tables:
+      - name: visitor_feedback
+        identifier: raw_feedback
+        description: Post-visit feedback from raw_feedback
+        columns:
+          - name: feedback_id
+            tests: [unique, not_null]
+          - name: visit_date
+            tests: [not_null]
+
+  - name: external_haunted
+    description: Haunted house data — mapped to raw_rides and raw_tickets
+    database: "{{ target.database }}"
+    schema: RAW
+    tables:
+      - name: haunted_houses
+        identifier: raw_rides
+        description: Haunted house reference data mapped from raw_rides
+        columns:
+          - name: ride_id
+            tests: [unique, not_null]
+          - name: ride_name
+            tests: [unique, not_null]
+      - name: haunted_house_tickets
+        identifier: raw_tickets
+        description: Haunted house tickets mapped from raw_tickets
+        columns:
+          - name: ticket_id
+            tests: [unique, not_null]
+          - name: customer_id
+            tests: [not_null]
+          - name: visit_date
+            tests: [not_null]
+
+  - name: employees
+    description: Employee roster — mapped to RAW.raw_employees
+    database: "{{ target.database }}"
+    schema: RAW
+    tables:
+      - name: employees
+        identifier: raw_employees
+        description: Employee records from raw_employees
+        columns:
+          - name: employee_id
+            tests: [unique, not_null]
+          - name: first_name
+            tests: [not_null]
+          - name: last_name
+            tests: [not_null]
+
+  - name: sales_transactions
+    description: In-park point-of-sale transactions — mapped to RAW.raw_sales_transactions
+    database: "{{ target.database }}"
+    schema: RAW
+    tables:
+      - name: sales_transactions
+        identifier: raw_sales_transactions
+        description: In-park sales transactions from raw_sales_transactions
+        columns:
+          - name: transaction_id
+            tests: [unique, not_null]
+          - name: customer_id
+            tests: [not_null]
+          - name: visit_date
+            tests: [not_null]
+
+  # ── Legacy sources ────────────────────────────────────────────────────────
+
+  - name: DBT_DEV
+    description: Existing Snowflake tables in the dev batch schema
+    database: "{{ target.database }}"
+    schema: DBT_BATCH_DEV
+    tables:
+      - name: first_dbt_model
+        description: Legacy first dbt model table
+      - name: raw_orders
+        description: Legacy raw orders table
+        columns:
+          - name: order_id
+            description: Primary key for orders
+            tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: Foreign key to customers
+            tests:
+              - not_null
+          - name: order_date
+            description: Date the order was placed
+          - name: order_status
+            description: Current status of the order
+            tests:
+              - accepted_values:
+                  arguments:
+                    values: ['completed', 'cancelled', 'pending', 'shipped']
+          - name: total_amount
+            description: Total monetary value of the order

@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: stg_rides
+    description: Cleaned ride and attraction catalog from the raw seed table
+    columns:
+      - name: ride_id
+        description: Primary key for rides
+        tests:
+          - unique
+          - not_null
+      - name: ride_name
+        tests:
+          - not_null
+      - name: thrill_level
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['low', 'medium', 'high', 'extreme']
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['active', 'maintenance', 'closed']
+      - name: is_haunted
+        tests:
+          - not_null
+
+  - name: stg_employees
+    description: Cleaned employee roster from the raw seed table
+    columns:
+      - name: employee_id
+        description: Primary key for employees
+        tests:
+          - unique
+          - not_null
+      - name: full_name
+        tests:
+          - not_null
+      - name: department
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['operations', 'food_beverage', 'merchandise', 'security', 'guest_services', 'maintenance']
+      - name: is_active
+        tests:
+          - not_null

@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: stg_haunted_events
+    description: Cleaned external haunted and seasonal event records
+    columns:
+      - name: event_id
+        description: Primary key for haunted events
+        tests:
+          - unique
+          - not_null
+      - name: event_name
+        tests:
+          - not_null
+      - name: event_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['seasonal', 'special']
+      - name: tickets_allocated
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 1
+      - name: tickets_sold
+        tests:
+          - not_null
+      - name: sellout_pct
+        description: Percentage of allocated tickets sold (0–100)
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 100

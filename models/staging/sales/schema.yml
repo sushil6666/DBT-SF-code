@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: stg_tickets
+    description: Cleaned ticket purchase records from the raw seed table
+    columns:
+      - name: ticket_id
+        description: Primary key for tickets
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: ticket_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['day_pass', 'weekend_pass', 'annual_pass', 'group_pass']
+      - name: final_price
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 1000
+      - name: purchase_channel
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['online', 'in_park', 'kiosk', 'phone', 'referral']
+
+  - name: stg_sales_transactions
+    description: Cleaned in-park sales transactions from the raw seed table
+    columns:
+      - name: transaction_id
+        description: Primary key for sales transactions
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: category
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['food', 'merchandise', 'game', 'photo']
+      - name: total_amount
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 5000

@@ -1,0 +1,95 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: Customer dimension with segmentation and lifecycle metrics
+    columns:
+      - name: customer_id
+        tests:
+          - unique
+          - not_null
+      - name: email
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_rides
+    description: Ride dimension with aggregated ratings and review counts
+    columns:
+      - name: ride_key
+        description: Surrogate key for the ride dimension
+        tests:
+          - unique
+          - not_null
+      - name: ride_id
+        tests:
+          - unique
+          - not_null
+      - name: thrill_level
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['low', 'medium', 'high', 'extreme']
+
+  - name: dim_employees
+    description: Employee dimension with manager hierarchy and tenure
+    columns:
+      - name: employee_key
+        description: Surrogate key for the employee dimension
+        tests:
+          - unique
+          - not_null
+      - name: employee_id
+        tests:
+          - unique
+          - not_null
+      - name: department
+        tests:
+          - not_null
+
+  - name: fct_visits
+    description: Fact table for customer visits with ticket and spend amounts
+    columns:
+      - name: visit_key
+        description: Surrogate key for the visit fact
+        tests:
+          - unique
+          - not_null
+      - name: ticket_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: visit_date
+        tests:
+          - not_null
+      - name: total_visit_spend
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+
+  - name: fct_sales
+    description: Fact table for in-park sales transactions (food and merchandise)
+    columns:
+      - name: sales_key
+        description: Surrogate key for the sales fact
+        tests:
+          - unique
+          - not_null
+      - name: transaction_id
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: total_amount
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
