@@ -49,28 +49,56 @@ models:
 
   - name: fct_visits
     description: Fact table for customer visits with ticket and spend amounts
+    config:
+      contract:
+        enforced: true          # fail the build if column names or types drift from this definition
     columns:
       - name: visit_key
         description: Surrogate key for the visit fact
+        data_type: varchar
         tests:
           - unique
           - not_null
       - name: ticket_id
+        data_type: varchar
         tests:
           - unique
           - not_null
       - name: customer_id
+        data_type: varchar
         tests:
           - not_null
       - name: visit_date
+        data_type: date
         tests:
           - not_null
+      - name: day_of_week
+        data_type: varchar
+      - name: month_name
+        data_type: varchar
+      - name: quarter
+        data_type: number
+      - name: year
+        data_type: number
+      - name: is_weekend
+        data_type: boolean
+      - name: ticket_type
+        data_type: varchar
+      - name: ticket_price
+        data_type: number
+      - name: in_park_spend
+        data_type: number
       - name: total_visit_spend
+        data_type: number
         tests:
           - not_null
           - dbt_expectations.expect_column_values_to_be_between:
               arguments:
                 min_value: 0
+              config:
+                store_failures: true   # negative spend rows stored in dbt_test__audit for investigation
+      - name: avg_rating
+        data_type: number
 
   - name: fct_sales
     description: Fact table for in-park sales transactions (food and merchandise)

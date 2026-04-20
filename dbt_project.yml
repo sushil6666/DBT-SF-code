@@ -72,3 +72,7 @@ models:
       +materialized: table
       +schema: utilities
       +tags: ['utilities']
+
+  # dbt_project_evaluator internal models incompatible with dbt-fusion (trailing comma SQL)
+  dbt_project_evaluator:
+    +enabled: false
