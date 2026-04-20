@@ -1,6 +1,12 @@
 version: 2
 
+# NOTE: meta, tags, freshness, and loaded_at_field are valid dbt Core (Python) syntax.
+# They are commented out below because dbt-fusion 2.0 preview does not yet support
+# these keys in sources. Uncomment when dbt-fusion gains full dbt Core parity.
+
 sources:
+
+  # ── Primary raw layer (dbt seeds) ────────────────────────────────────────────
 
   - name: raw
     description: >
@@ -10,6 +16,13 @@ sources:
     database: "{{ target.database }}"
     schema: raw
     loader: dbt_seed
+    # tags: ['raw', 'seed', 'bronze']
+    # meta:
+    #   owner: data_engineering
+    #   team: platform
+    #   tier: bronze
+    #   data_classification: internal
+    #   loader: dbt_seed
 
     tables:
 
@@ -17,6 +30,16 @@ sources:
         description: >
           Guest master records. Each row represents one customer account.
           Contains PII — handle with care.
+        # tags: ['customers', 'pii', 'seed']
+        # meta:
+        #   contains_pii: true
+        #   data_classification: confidential
+        #   steward: guest_services
+        #   primary_key: customer_id
+        # loaded_at_field: created_at
+        # freshness:
+        #   warn_after: {count: 7, period: day}
+        #   error_after: {count: 30, period: day}
         columns:
           - name: customer_id
             description: Surrogate primary key for a customer account
@@ -67,6 +90,14 @@ sources:
         description: >
           Master catalog of all rides and attractions in the park.
           Each row represents one physical ride asset.
+        # tags: ['park_assets', 'rides', 'seed']
+        # meta:
+        #   contains_pii: false
+        #   data_classification: internal
+        #   steward: operations
+        #   primary_key: ride_id
+        #   note: No load timestamp available — freshness not applicable for seed data.
+        # freshness: null   # explicitly disabled — no load timestamp column
         columns:
           - name: ride_id
             description: Surrogate primary key for a ride
@@ -130,6 +161,16 @@ sources:
         description: >
           Ticket purchase records — one row per ticket transaction.
           Links a customer to a specific visit date and ticket product.
+        # tags: ['sales', 'tickets', 'seed']
+        # meta:
+        #   contains_pii: false
+        #   data_classification: internal
+        #   steward: revenue
+        #   primary_key: ticket_id
+        # loaded_at_field: purchase_date
+        # freshness:
+        #   warn_after: {count: 1, period: day}
+        #   error_after: {count: 3, period: day}
         columns:
           - name: ticket_id
             description: Surrogate primary key for a ticket purchase
@@ -185,6 +226,16 @@ sources:
         description: >
           In-park point-of-sale transactions for food and merchandise.
           One row per line item sold during a guest visit.
+        # tags: ['sales', 'transactions', 'seed']
+        # meta:
+        #   contains_pii: false
+        #   data_classification: internal
+        #   steward: revenue
+        #   primary_key: transaction_id
+        # loaded_at_field: visit_date
+        # freshness:
+        #   warn_after: {count: 1, period: day}
+        #   error_after: {count: 3, period: day}
         columns:
           - name: transaction_id
             description: Surrogate primary key for a sales transaction
@@ -238,6 +289,14 @@ sources:
         description: >
           Employee roster including department, role, and compensation data.
           Contains PII — handle with care.
+        # tags: ['hr', 'employees', 'pii', 'seed']
+        # meta:
+        #   contains_pii: true
+        #   data_classification: confidential
+        #   steward: hr
+        #   primary_key: employee_id
+        #   note: No load timestamp available — freshness not applicable for seed data.
+        # freshness: null   # explicitly disabled — no load timestamp column
         columns:
           - name: employee_id
             description: Surrogate primary key for an employee record
@@ -287,6 +346,16 @@ sources:
         description: >
           Guest satisfaction feedback submitted after visits.
           One row per feedback submission.
+        # tags: ['feedback', 'seed']
+        # meta:
+        #   contains_pii: false
+        #   data_classification: internal
+        #   steward: guest_services
+        #   primary_key: feedback_id
+        # loaded_at_field: submitted_at
+        # freshness:
+        #   warn_after: {count: 3, period: day}
+        #   error_after: {count: 7, period: day}
         columns:
           - name: feedback_id
             description: Surrogate primary key for a feedback record
@@ -337,6 +406,14 @@ sources:
         description: >
           Seasonal and special haunted events run in partnership with
           external organisations. One row per event booking.
+        # tags: ['external', 'haunted', 'events', 'seed']
+        # meta:
+        #   contains_pii: false
+        #   data_classification: internal
+        #   steward: operations
+        #   primary_key: event_id
+        #   note: No load timestamp available — freshness not applicable for seed data.
+        # freshness: null   # explicitly disabled — no load timestamp column
         columns:
           - name: event_id
             description: Surrogate primary key for a haunted event
@@ -382,16 +459,31 @@ sources:
           - name: description
             description: Short human-readable summary of the event
 
-  # ── Haunted-house star schema sources ────────────────────────────────────────
+  # ── Domain-specific sources (alias views over raw layer) ─────────────────────
 
   - name: customer_data
     description: Customer master records — mapped to RAW.raw_customers
     database: "{{ target.database }}"
     schema: RAW
+    # tags: ['customers', 'pii', 'bronze']
+    # meta:
+    #   owner: guest_services
+    #   team: guest_experience
+    #   tier: bronze
+    #   contains_pii: true
+    #   data_classification: confidential
     tables:
       - name: customers
         identifier: raw_customers
         description: Guest master records from raw_customers
+        # tags: ['customers', 'pii']
+        # meta:
+        #   primary_key: customer_id
+        #   contains_pii: true
+        # loaded_at_field: created_at
+        # freshness:
+        #   warn_after: {count: 7, period: day}
+        #   error_after: {count: 30, period: day}
         columns:
           - name: customer_id
             tests: [unique, not_null]
@@ -406,10 +498,22 @@ sources:
     description: Park asset catalog including rides and ticket products
     database: "{{ target.database }}"
     schema: RAW
+    # tags: ['park_assets', 'bronze']
+    # meta:
+    #   owner: operations
+    #   team: operations
+    #   tier: bronze
+    #   contains_pii: false
+    #   data_classification: internal
     tables:
       - name: rides
         identifier: raw_rides
         description: Master catalog of all rides and attractions
+        # tags: ['rides', 'park_assets']
+        # meta:
+        #   primary_key: ride_id
+        #   contains_pii: false
+        # freshness: null
         columns:
           - name: ride_id
             tests: [unique, not_null]
@@ -418,6 +522,14 @@ sources:
       - name: ticket_types
         identifier: raw_tickets
         description: Ticket types derived from distinct ticket_type values in raw_tickets
+        # tags: ['tickets', 'sales']
+        # meta:
+        #   primary_key: ticket_id
+        #   contains_pii: false
+        # loaded_at_field: purchase_date
+        # freshness:
+        #   warn_after: {count: 1, period: day}
+        #   error_after: {count: 3, period: day}
         columns:
           - name: ticket_id
             tests: [unique, not_null]
@@ -428,10 +540,25 @@ sources:
     description: Ticket sales transactions split by purchase channel
     database: "{{ target.database }}"
     schema: RAW
+    # tags: ['sales', 'tickets', 'bronze']
+    # meta:
+    #   owner: revenue
+    #   team: revenue
+    #   tier: bronze
+    #   contains_pii: false
+    #   data_classification: internal
     tables:
       - name: ticket_sales_online
         identifier: raw_tickets
         description: Online channel purchases filtered from raw_tickets
+        # tags: ['sales', 'online', 'tickets']
+        # meta:
+        #   primary_key: ticket_id
+        #   channel: online
+        # loaded_at_field: purchase_date
+        # freshness:
+        #   warn_after: {count: 1, period: day}
+        #   error_after: {count: 3, period: day}
         columns:
           - name: ticket_id
             tests: [unique, not_null]
@@ -442,6 +569,14 @@ sources:
       - name: ticket_sales_physical
         identifier: raw_tickets
         description: In-person purchases filtered from raw_tickets
+        # tags: ['sales', 'in_park', 'tickets']
+        # meta:
+        #   primary_key: ticket_id
+        #   channel: in_park
+        # loaded_at_field: purchase_date
+        # freshness:
+        #   warn_after: {count: 1, period: day}
+        #   error_after: {count: 3, period: day}
         columns:
           - name: ticket_id
             tests: [unique, not_null]
@@ -454,10 +589,24 @@ sources:
     description: Visitor feedback — mapped to RAW.raw_feedback
     database: "{{ target.database }}"
     schema: RAW
+    # tags: ['feedback', 'bronze']
+    # meta:
+    #   owner: guest_services
+    #   team: guest_experience
+    #   tier: bronze
+    #   contains_pii: false
+    #   data_classification: internal
     tables:
       - name: visitor_feedback
         identifier: raw_feedback
         description: Post-visit feedback from raw_feedback
+        # tags: ['feedback', 'ratings']
+        # meta:
+        #   primary_key: feedback_id
+        # loaded_at_field: submitted_at
+        # freshness:
+        #   warn_after: {count: 3, period: day}
+        #   error_after: {count: 7, period: day}
         columns:
           - name: feedback_id
             tests: [unique, not_null]
@@ -468,10 +617,22 @@ sources:
     description: Haunted house data — mapped to raw_rides and raw_tickets
     database: "{{ target.database }}"
     schema: RAW
+    # tags: ['external', 'haunted', 'bronze']
+    # meta:
+    #   owner: operations
+    #   team: operations
+    #   tier: bronze
+    #   contains_pii: false
+    #   data_classification: internal
     tables:
       - name: haunted_houses
         identifier: raw_rides
         description: Haunted house reference data mapped from raw_rides
+        # tags: ['haunted', 'rides']
+        # meta:
+        #   primary_key: ride_id
+        #   filter: is_haunted = true
+        # freshness: null
         columns:
           - name: ride_id
             tests: [unique, not_null]
@@ -480,6 +641,13 @@ sources:
       - name: haunted_house_tickets
         identifier: raw_tickets
         description: Haunted house tickets mapped from raw_tickets
+        # tags: ['haunted', 'tickets', 'sales']
+        # meta:
+        #   primary_key: ticket_id
+        # loaded_at_field: purchase_date
+        # freshness:
+        #   warn_after: {count: 1, period: day}
+        #   error_after: {count: 3, period: day}
         columns:
           - name: ticket_id
             tests: [unique, not_null]
@@ -492,10 +660,23 @@ sources:
     description: Employee roster — mapped to RAW.raw_employees
     database: "{{ target.database }}"
     schema: RAW
+    # tags: ['hr', 'employees', 'pii', 'bronze']
+    # meta:
+    #   owner: hr
+    #   team: hr
+    #   tier: bronze
+    #   contains_pii: true
+    #   data_classification: confidential
     tables:
       - name: employees
         identifier: raw_employees
         description: Employee records from raw_employees
+        # tags: ['employees', 'pii', 'hr']
+        # meta:
+        #   primary_key: employee_id
+        #   contains_pii: true
+        #   note: No load timestamp — freshness check not applicable.
+        # freshness: null
         columns:
           - name: employee_id
             tests: [unique, not_null]
@@ -508,10 +689,24 @@ sources:
     description: In-park point-of-sale transactions — mapped to RAW.raw_sales_transactions
     database: "{{ target.database }}"
     schema: RAW
+    # tags: ['sales', 'transactions', 'bronze']
+    # meta:
+    #   owner: revenue
+    #   team: revenue
+    #   tier: bronze
+    #   contains_pii: false
+    #   data_classification: internal
     tables:
       - name: sales_transactions
         identifier: raw_sales_transactions
         description: In-park sales transactions from raw_sales_transactions
+        # tags: ['transactions', 'pos']
+        # meta:
+        #   primary_key: transaction_id
+        # loaded_at_field: visit_date
+        # freshness:
+        #   warn_after: {count: 1, period: day}
+        #   error_after: {count: 3, period: day}
         columns:
           - name: transaction_id
             tests: [unique, not_null]
@@ -520,17 +715,33 @@ sources:
           - name: visit_date
             tests: [not_null]
 
-  # ── Legacy sources ────────────────────────────────────────────────────────
+  # ── Legacy sources ────────────────────────────────────────────────────────────
 
   - name: DBT_DEV
     description: Existing Snowflake tables in the dev batch schema
     database: "{{ target.database }}"
     schema: DBT_BATCH_DEV
+    # tags: ['legacy', 'deprecated']
+    # meta:
+    #   owner: data_engineering
+    #   team: platform
+    #   tier: legacy
+    #   data_classification: internal
+    #   note: Legacy source — do not build new models against this source.
     tables:
       - name: first_dbt_model
         description: Legacy first dbt model table
+        # tags: ['legacy']
+        # meta:
+        #   deprecated: true
+        # freshness: null
       - name: raw_orders
         description: Legacy raw orders table
+        # tags: ['legacy', 'orders']
+        # meta:
+        #   deprecated: true
+        #   primary_key: order_id
+        # freshness: null
         columns:
           - name: order_id
             description: Primary key for orders
