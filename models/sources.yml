@@ -57,7 +57,9 @@ sources:
           - name: email
             description: Customer email address — must be unique across all accounts
             tests:
-              - unique
+              - unique:
+                  config:
+                    store_failures: true   # business key — duplicates need investigation
               - not_null
           - name: phone
             description: Customer contact phone number
@@ -70,6 +72,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['standard', 'silver', 'gold', 'platinum']
+                  config:
+                    store_failures: true   # inspect which unexpected tiers arrive
           - name: signup_channel
             description: Channel through which the customer registered
             tests:
@@ -77,6 +81,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['online', 'in_park', 'phone', 'referral']
+                  config:
+                    store_failures: true   # inspect unknown registration channels
           - name: created_at
             description: Timestamp when the customer account was first created
             tests:
@@ -107,7 +113,9 @@ sources:
           - name: ride_name
             description: Display name of the ride or attraction
             tests:
-              - unique
+              - unique:
+                  config:
+                    store_failures: true   # natural key — duplicate names need investigation
               - not_null
           - name: ride_type
             description: >
@@ -119,6 +127,8 @@ sources:
                   arguments:
                     values: ['roller_coaster', 'dark_ride', 'drop_tower',
                              'water_ride', 'carousel', 'kiddie_ride']
+                  config:
+                    store_failures: true   # inspect rides with unrecognised type
           - name: min_height_cm
             description: Minimum rider height in centimetres. 0 means no restriction.
           - name: thrill_level
@@ -128,6 +138,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['low', 'medium', 'high', 'extreme']
+                  config:
+                    store_failures: true   # inspect rides with unrecognised thrill level
           - name: capacity_per_hour
             description: Maximum number of riders the attraction can process per hour
             tests:
@@ -143,6 +155,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['true', 'false']
+                  config:
+                    store_failures: true   # inspect rides with unexpected is_haunted value
           - name: opened_date
             description: Date the ride first opened to the public (YYYY-MM-DD)
             tests:
@@ -154,6 +168,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['active', 'maintenance', 'closed']
+                  config:
+                    store_failures: true   # inspect rides with unrecognised operational status
           - name: avg_wait_minutes
             description: Rolling average queue wait time in minutes
 
@@ -185,6 +201,8 @@ sources:
                   arguments:
                     to: source('raw', 'raw_customers')
                     field: customer_id
+                  config:
+                    store_failures: true   # inspect ticket_ids whose customer_id has no match in raw_customers
           - name: ticket_type
             description: Product type purchased
             tests:
@@ -192,6 +210,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['day_pass', 'weekend_pass', 'annual_pass', 'group_pass']
+                  config:
+                    store_failures: true   # inspect tickets with unrecognised product type
           - name: purchase_date
             description: Date the ticket was purchased (YYYY-MM-DD)
             tests:
@@ -207,6 +227,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['online', 'in_park', 'kiosk', 'phone']
+                  config:
+                    store_failures: true   # inspect tickets arriving via unknown channels
           - name: base_price
             description: Face value of the ticket before any discount
             tests:
@@ -257,6 +279,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['food', 'merchandise', 'game', 'photo']
+                  config:
+                    store_failures: true   # inspect transactions with unrecognised category
           - name: item_name
             description: Name of the product or item sold
             tests:
@@ -280,6 +304,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['credit_card', 'cash', 'kiosk', 'mobile']
+                  config:
+                    store_failures: true   # inspect transactions with unrecognised payment method
           - name: location
             description: Name of the outlet or stand where the sale occurred
             tests:
@@ -319,6 +345,8 @@ sources:
                   arguments:
                     values: ['operations', 'food_beverage', 'merchandise',
                              'security', 'guest_services', 'maintenance']
+                  config:
+                    store_failures: true   # inspect employees assigned to unknown departments
           - name: role
             description: Job title within the department
             tests:
@@ -381,6 +409,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['1', '2', '3', '4', '5']
+                  config:
+                    store_failures: true   # inspect feedback records with out-of-range ratings
           - name: category
             description: Topic area the feedback relates to
             tests:
@@ -388,6 +418,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['ride', 'food', 'general', 'wait_times', 'staff', 'cleanliness']
+                  config:
+                    store_failures: true   # inspect feedback filed under unknown categories
           - name: sentiment
             description: Pre-classified sentiment label for the feedback comment
             tests:
@@ -395,6 +427,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['positive', 'neutral', 'negative']
+                  config:
+                    store_failures: true   # inspect feedback with unrecognised sentiment label
           - name: comments
             description: Free-text comment submitted by the guest
           - name: submitted_at
@@ -423,7 +457,9 @@ sources:
           - name: event_name
             description: Display name of the event
             tests:
-              - unique
+              - unique:
+                  config:
+                    store_failures: true   # natural key — duplicate event names need investigation
               - not_null
           - name: event_start_date
             description: First day the event runs (YYYY-MM-DD)
@@ -440,6 +476,8 @@ sources:
               - accepted_values:
                   arguments:
                     values: ['seasonal', 'special']
+                  config:
+                    store_failures: true   # inspect events with unrecognised cadence type
           - name: external_partner
             description: Name of the external organisation delivering the event
             tests:
