@@ -403,10 +403,18 @@ sources:
             tests: [unique, not_null]
 
   - name: park_assets
-    description: Ticket product catalog derived from raw_tickets
+    description: Park asset catalog including rides and ticket products
     database: "{{ target.database }}"
     schema: RAW
     tables:
+      - name: rides
+        identifier: raw_rides
+        description: Master catalog of all rides and attractions
+        columns:
+          - name: ride_id
+            tests: [unique, not_null]
+          - name: ride_name
+            tests: [unique, not_null]
       - name: ticket_types
         identifier: raw_tickets
         description: Ticket types derived from distinct ticket_type values in raw_tickets

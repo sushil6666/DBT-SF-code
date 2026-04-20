@@ -1,11 +1,11 @@
 {{ config(materialized='table') }}
 
 with tickets as (
-    select * from {{ ref('stg_haunted_house_tickets') }}
+    select * from {{ ref('stg_external_haunted__haunted_house_tickets') }}
 ),
 
 houses as (
-    select * from {{ ref('stg_haunted_houses') }}
+    select * from {{ ref('stg_external_haunted__haunted_houses') }}
 )
 
 select

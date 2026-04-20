@@ -1,14 +1,14 @@
 {{ config(materialized='table') }}
 
 with employees as (
-    select * from {{ ref('stg_employees') }}
+    select * from {{ ref('stg_employees__employees') }}
 ),
 
 managers as (
     select
         employee_id,
         full_name as manager_name
-    from {{ ref('stg_employees') }}
+    from {{ ref('stg_employees__employees') }}
 )
 
 select

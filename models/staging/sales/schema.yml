@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_tickets
+  - name: stg_sales__tickets
     description: Cleaned ticket purchase records from the raw seed table
     columns:
       - name: ticket_id
@@ -31,7 +31,7 @@ models:
               arguments:
                 values: ['online', 'in_park', 'kiosk', 'phone', 'referral']
 
-  - name: stg_sales_transactions
+  - name: stg_sales_transactions__sales_transactions
     description: Cleaned in-park sales transactions from the raw seed table
     columns:
       - name: transaction_id

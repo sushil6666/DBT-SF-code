@@ -3,7 +3,7 @@
 -- Combines ticket purchases with in-park spend and feedback per visit
 
 with tickets as (
-    select * from {{ ref('stg_tickets') }}
+    select * from {{ ref('stg_sales__tickets') }}
 ),
 
 sales as (
@@ -11,7 +11,7 @@ sales as (
         customer_id,
         visit_date,
         sum(total_amount) as total_in_park_spend
-    from {{ ref('stg_sales_transactions') }}
+    from {{ ref('stg_sales_transactions__sales_transactions') }}
     group by 1, 2
 ),
 
@@ -20,7 +20,7 @@ feedback as (
         customer_id,
         visit_date,
         avg(rating) as avg_rating
-    from {{ ref('stg_feedback') }}
+    from {{ ref('stg_feedback__visitor_feedback') }}
     group by 1, 2
 ),
 

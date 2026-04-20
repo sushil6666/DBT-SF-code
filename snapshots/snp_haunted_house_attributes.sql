@@ -9,6 +9,6 @@
     )
 }}
 
-select * from {{ ref('stg_haunted_houses') }}
+select * from {{ ref('stg_external_haunted__haunted_houses') }}
 
 {% endsnapshot %}

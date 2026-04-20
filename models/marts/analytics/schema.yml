@@ -57,3 +57,20 @@ models:
       - name: rating_rank
         tests:
           - not_null
+
+  - name: agg_customer_spending_profile
+    description: Customer spending breakdown by ticket and in-park purchases
+  - name: agg_fear_vs_ratings
+    description: Correlation between haunted house fear level and visitor ratings
+  - name: agg_halloween_spending
+    description: Spending patterns during the Halloween season
+  - name: agg_happiest_houses
+    description: Haunted houses ranked by visitor satisfaction
+  - name: agg_house_profitability_by_time
+    description: Haunted house profitability trends over time
+  - name: agg_ticket_value
+    description: Ticket value analysis across types and channels
+  - name: agg_vip_satisfaction
+    description: VIP member satisfaction scores vs general visitors
+  - name: agg_visitor_recommendations
+    description: Visitor recommendation rates by house and visitor type

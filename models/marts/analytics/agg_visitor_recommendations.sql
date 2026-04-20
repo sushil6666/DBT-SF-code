@@ -5,7 +5,7 @@
 -- NPS segmentation: Promoter >= 70%, Passive >= 50%, Detractor < 50%
 
 with feedback as (
-    select * from {{ ref('stg_visitor_feedback') }}
+    select * from {{ ref('stg_feedback__haunted_visitor_feedback') }}
 ),
 
 aggregated as (

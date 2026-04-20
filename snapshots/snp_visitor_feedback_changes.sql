@@ -9,6 +9,6 @@
     )
 }}
 
-select * from {{ ref('stg_visitor_feedback') }}
+select * from {{ ref('stg_feedback__haunted_visitor_feedback') }}
 
 {% endsnapshot %}

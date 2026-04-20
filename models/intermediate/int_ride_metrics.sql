@@ -3,7 +3,7 @@
 -- Enriches ride catalog with aggregated feedback metrics
 
 with rides as (
-    select * from {{ ref('stg_rides') }}
+    select * from {{ ref('stg_park_assets__rides') }}
 ),
 
 feedback_agg as (
@@ -13,7 +13,7 @@ feedback_agg as (
         avg(rating)                                                     as avg_rating,
         sum(case when sentiment = 'positive' then 1 else 0 end)        as positive_reviews,
         sum(case when sentiment = 'negative' then 1 else 0 end)        as negative_reviews
-    from {{ ref('stg_feedback') }}
+    from {{ ref('stg_feedback__visitor_feedback') }}
     where ride_id is not null
     group by 1
 )

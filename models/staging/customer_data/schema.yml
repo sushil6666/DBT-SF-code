@@ -1,31 +1,20 @@
 version: 2
 
 models:
-  - name: stg_customers
-    description: Cleaned and renamed customer records from the raw seed table
+  - name: stg_customer_data__customers
+    description: Cleaned and renamed customer records from the customer_data source
     columns:
       - name: customer_id
         description: Primary key for customers
         tests:
           - unique
           - not_null
-      - name: full_name
-        description: Concatenated first and last name
-        tests:
-          - not_null
       - name: email
         description: Lowercased customer email address
         tests:
           - unique
           - not_null
-      - name: membership_type
-        description: Membership tier of the customer
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['standard', 'silver', 'gold', 'platinum']
-      - name: is_active
-        description: Whether the customer account is currently active
+      - name: is_vip_member
+        description: Whether the customer holds a gold or platinum membership
         tests:
           - not_null

@@ -1,7 +1,7 @@
 {{ config(materialized='table') }}
 
 with sales as (
-    select * from {{ ref('stg_sales_transactions') }}
+    select * from {{ ref('stg_sales_transactions__sales_transactions') }}
 ),
 
 date_dim as (

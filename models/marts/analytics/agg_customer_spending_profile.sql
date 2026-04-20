@@ -6,7 +6,7 @@
 -- Grain: one row per (age_group, gender)
 
 with feedback as (
-    select * from {{ ref('stg_visitor_feedback') }}
+    select * from {{ ref('stg_feedback__haunted_visitor_feedback') }}
 )
 
 select

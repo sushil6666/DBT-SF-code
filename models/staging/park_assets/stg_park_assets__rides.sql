@@ -1,7 +1,7 @@
 {{ config(materialized='view') }}
 
 with source as (
-    select * from {{ source('external_haunted', 'haunted_houses') }}
+    select * from {{ source('park_assets', 'rides') }}
 ),
 
 renamed as (

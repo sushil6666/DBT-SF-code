@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_feedback
+  - name: stg_feedback__visitor_feedback
     description: Cleaned customer feedback and ratings submitted after visits
     columns:
       - name: feedback_id

@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_rides
+  - name: stg_park_assets__rides
     description: Cleaned ride and attraction catalog from the raw seed table
     columns:
       - name: ride_id
@@ -28,7 +28,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_employees
+  - name: stg_employees__employees
     description: Cleaned employee roster from the raw seed table
     columns:
       - name: employee_id

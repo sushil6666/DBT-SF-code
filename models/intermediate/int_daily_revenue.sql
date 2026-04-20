@@ -8,7 +8,7 @@ with ticket_revenue as (
         sum(final_price)            as ticket_revenue,
         count(distinct customer_id) as unique_visitors,
         count(ticket_id)            as tickets_sold
-    from {{ ref('stg_tickets') }}
+    from {{ ref('stg_sales__tickets') }}
     group by 1
 ),
 
@@ -18,7 +18,7 @@ sales_revenue as (
         sum(total_amount)                                                   as in_park_revenue,
         sum(case when category = 'food'        then total_amount else 0 end) as food_revenue,
         sum(case when category = 'merchandise' then total_amount else 0 end) as merch_revenue
-    from {{ ref('stg_sales_transactions') }}
+    from {{ ref('stg_sales_transactions__sales_transactions') }}
     group by 1
 )
 

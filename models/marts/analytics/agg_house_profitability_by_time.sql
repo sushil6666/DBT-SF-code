@@ -4,7 +4,7 @@
 -- Grain: one row per (haunted_house, visit_hour)
 
 with feedback as (
-    select * from {{ ref('stg_visitor_feedback') }}
+    select * from {{ ref('stg_feedback__haunted_visitor_feedback') }}
 )
 
 select
