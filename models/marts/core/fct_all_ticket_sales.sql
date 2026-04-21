@@ -1,4 +1,8 @@
-{{ config(materialized='table') }}
+{{ config(
+    materialized='table',
+    pre_hook="ALTER SESSION SET TIMEZONE = 'UTC'",
+    post_hook="GRANT SELECT ON {{ this }} TO ROLE {{ var('bi_role') }}"
+) }}
 
 with online_sales as (
     select * from {{ ref('stg_sales__ticket_sales_online') }}
@@ -42,12 +46,7 @@ enriched as (
         (purchase_date = visit_date)            as same_day_visit,
         (datediff('day', purchase_date, visit_date) > 0) as advance_purchase,
 
-        case
-            when visit_hour between 0  and 11   then 'Morning'
-            when visit_hour between 12 and 17   then 'Afternoon'
-            when visit_hour between 18 and 20   then 'Evening'
-            else 'Night'
-        end                                     as visit_time_category,
+        {{ visit_time_of_day('visit_hour') }}   as visit_time_category,
 
         case
             when month(visit_date) in (10, 11)  then 'Halloween Season'

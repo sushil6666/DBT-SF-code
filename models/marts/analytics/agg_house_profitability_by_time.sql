@@ -10,12 +10,7 @@ with feedback as (
 select
     haunted_house_name,
     visit_hour,
-    case
-        when visit_hour between 0  and 11   then 'Morning'
-        when visit_hour between 12 and 17   then 'Afternoon'
-        when visit_hour between 18 and 20   then 'Evening'
-        else 'Night'
-    end                                                     as time_slot,
+    {{ visit_time_of_day('visit_hour') }}                   as time_slot,
     count(*)                                                as total_visits,
     round(sum(ticket_price), 2)                             as total_revenue,
     round(avg(ticket_price), 2)                             as avg_ticket_price,

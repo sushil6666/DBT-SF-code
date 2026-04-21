@@ -23,6 +23,18 @@ vars:
   date_spine_start: '2020-01-01'
   date_spine_end:   '2026-12-31'
 
+  # Filter for halloween spending analysis — override via CLI for narrower dev runs
+  # e.g. dbt run --select agg_halloween_spending --vars '{"halloween_analysis_start_date": "2024-01-01"}'
+  halloween_analysis_start_date: '2023-01-01'
+
+  # Minimum satisfaction rating included in house happiness rankings
+  # e.g. dbt run --select agg_happiest_houses --vars '{"min_satisfaction_rating": 4}'
+  min_satisfaction_rating: 3
+
+  # Snowflake role granted SELECT on all mart tables after each build
+  # Override per environment in CI/CD job config
+  bi_role: 'SYSADMIN'
+
 seeds:
   dbt_practice:
     +schema: raw

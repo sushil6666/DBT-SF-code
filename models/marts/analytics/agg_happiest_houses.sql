@@ -5,6 +5,7 @@
 
 with feedback as (
     select * from {{ ref('stg_feedback__haunted_visitor_feedback') }}
+    where satisfaction_rating >= {{ var('min_satisfaction_rating', 3) }}
 )
 
 select

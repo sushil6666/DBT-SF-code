@@ -24,9 +24,9 @@ renamed as (
         purchase_date::date             as purchase_date,
         visit_date::date                as visit_date,
         purchase_channel,
-        base_price::numeric(10, 2)      as base_price,
-        discount_amount::numeric(10, 2) as discount_amount,
-        final_price::numeric(10, 2)     as final_price,
+        {{ cast_price('base_price') }}                  as base_price,
+        {{ cast_price('discount_amount', 12, 4) }}      as discount_amount,
+        {{ cast_price('final_price') }}                 as final_price,
         nullif(promo_code, '')          as promo_code,
         case
             when discount_amount > 0 then true
