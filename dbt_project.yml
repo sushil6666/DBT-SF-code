@@ -19,6 +19,14 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+# Runs once at the very start of the entire dbt run (before any model builds)
+on-run-start:
+  - "ALTER SESSION SET QUERY_TAG = 'dbt_run_{{ invocation_id }}'"
+
+# Runs once at the very end of the entire dbt run (after all models finish)
+on-run-end:
+  - "ALTER SESSION SET QUERY_TAG = ''"
+
 vars:
   date_spine_start: '2020-01-01'
   date_spine_end:   '2026-12-31'
@@ -132,6 +140,12 @@ models:
       +materialized: table
       +schema: utilities
       +tags: ['utilities']
+
+    macro_demos:
+      +enabled: false
+      +materialized: view
+      +schema: macro_demos
+      +tags: ['macro_demo']
 
   # dbt_project_evaluator internal models incompatible with dbt-fusion (trailing comma SQL)
   dbt_project_evaluator:
