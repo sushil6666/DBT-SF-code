@@ -1,6 +1,5 @@
 {{ config(
     materialized='view',
-    enabled=false,
     tags=['macro_demo', 'demo_14']
 ) }}
 
@@ -13,9 +12,8 @@
 
 SELECT
     customer_id,
-    customer_name,
+    first_name,
+    last_name,
     email,
-    loyalty_tier,
-    age_group,
     {{ scd_metadata_columns() }}
 FROM {{ read_current_snapshot(ref('snp_customers')) }}

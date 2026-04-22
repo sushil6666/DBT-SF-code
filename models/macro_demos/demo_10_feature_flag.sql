@@ -1,6 +1,5 @@
 {{ config(
     materialized='view',
-    enabled=false,
     tags=['macro_demo', 'demo_10']
 ) }}
 
@@ -14,7 +13,6 @@
 SELECT
     ticket_id,
     customer_id,
-    house_id,
     visit_date,
     ticket_type,
     final_price,

@@ -1,15 +1,14 @@
 {{ config(
     materialized='table',
-    enabled=false,
     tags=['macro_demo', 'demo_01']
 ) }}
 
 SELECT
-    visit_id,
+    ticket_id,
     customer_id,
-    house_id,
     visit_date,
+    ticket_type,
     total_visit_spend,
-    satisfaction_rating,
+    avg_rating,
     {{ audit_columns() }}
 FROM {{ ref('fct_visits') }}

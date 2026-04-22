@@ -15,12 +15,14 @@ models:
         tests:
           - not_null
           - valid_ticket_types:
-              valid_types: ['general', 'vip', 'group', 'child']
+              arguments:
+                valid_types: ['general', 'vip', 'group', 'child']
 
       - name: satisfaction_rating
         description: "Customer satisfaction score 1-5"
         tests:
           - not_null
           - rating_in_range:
-              min_val: 1
-              max_val: 5
+              arguments:
+                min_val: 1
+                max_val: 5

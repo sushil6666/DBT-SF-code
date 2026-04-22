@@ -1,6 +1,5 @@
 {{ config(
     materialized='table',
-    enabled=false,
     tags=['macro_demo', 'demo_06']
 ) }}
 
@@ -9,7 +8,7 @@ SELECT
     transaction_id,
     customer_id,
     visit_date,
-    ticket_type,
-    amount,
+    category,
+    total_amount,
     payment_method
 FROM {{ ref('stg_sales_transactions__sales_transactions') }}
