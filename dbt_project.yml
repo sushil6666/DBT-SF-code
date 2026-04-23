@@ -142,7 +142,7 @@ models:
       +tags: ['utilities']
 
     macro_demos:
-      +enabled: false
+      +enabled: true
       +materialized: view
       +schema: macro_demos
       +tags: ['macro_demo']

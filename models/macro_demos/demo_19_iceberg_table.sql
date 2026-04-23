@@ -3,13 +3,12 @@
         materialized = 'iceberg_table',
         tags         = ['macro_demo', 'demo_19', 'custom_materialization'],
         meta         = {
-            'external_volume': 'my_iceberg_volume',
+            'external_volume': 'SNOWFLAKE_MANAGED',
             'base_location'  : 'haunt_analytics/ticket_sales/',
             'catalog'        : 'SNOWFLAKE'
         }
     )
 }}
-
 /*
   demo_19_iceberg_table
   ----------------------

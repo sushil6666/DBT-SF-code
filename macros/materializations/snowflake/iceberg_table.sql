@@ -7,15 +7,13 @@
 
     {%- if not external_volume -%}
         {{ exceptions.raise_compiler_error(
-            "iceberg_table materialization requires `external_volume` inside meta config. "
-            ~ "Example: {{ config(materialized='iceberg_table', meta={'external_volume': 'my_vol', 'base_location': 'path/'}) }}"
+            "iceberg_table materialization requires `external_volume` inside meta config."
         ) }}
     {%- endif -%}
 
-    {%- if not base_location -%}
+    {%- if external_volume | upper != 'SNOWFLAKE_MANAGED' and not base_location -%}
         {{ exceptions.raise_compiler_error(
-            "iceberg_table materialization requires `base_location` inside meta config. "
-            ~ "Example: {{ config(materialized='iceberg_table', meta={'external_volume': 'my_vol', 'base_location': 'path/'}) }}"
+            "iceberg_table materialization requires `base_location` when not using SNOWFLAKE_MANAGED."
         ) }}
     {%- endif -%}
 
@@ -25,18 +23,18 @@
     {%- set iceberg_props -%}
         EXTERNAL_VOLUME = '{{ external_volume }}'
         CATALOG = '{{ catalog }}'
+        {%- if external_volume | upper != 'SNOWFLAKE_MANAGED' %}
         BASE_LOCATION = '{{ base_location }}'
+        {%- endif %}
     {%- endset -%}
 
-    {%- set iceberg_ddl -%}
+    {%- call statement('main') -%}
         CREATE OR REPLACE ICEBERG TABLE {{ relation }}
             {{ iceberg_props }}
         AS (
             {{ model_sql }}
         )
-    {%- endset -%}
-
-    {{ run_query(iceberg_ddl) }}
+    {%- endcall -%}
 
     {{ return({'relations': [relation]}) }}
 
