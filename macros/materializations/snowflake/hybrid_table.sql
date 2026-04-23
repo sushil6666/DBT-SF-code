@@ -9,8 +9,6 @@
         ) }}
     {%- endif -%}
 
-    {#- dbt-fusion may surface primary_key as a list even when a string is specified;
-        normalise to a comma-separated string in both cases. -#}
     {%- if primary_key is string -%}
         {%- set pk_cols = primary_key -%}
     {%- else -%}
@@ -20,38 +18,32 @@
     {%- set relation  = this.incorporate(type='table') -%}
     {%- set model_sql = sql -%}
 
-    {#- Hybrid tables do not support CREATE OR REPLACE ... AS SELECT directly;
-        materialise via a staging temp table then INSERT SELECT. -#}
-
     {%- set staging = make_temp_relation(this) -%}
 
-    {{ run_query(
-        create_table_as(
+    {%- call statement('create_staging') -%}
+        {{ create_table_as(
             relation   = staging,
             sql        = model_sql,
             table_type = 'temporary'
-        )
-    ) }}
+        ) }}
+    {%- endcall -%}
 
-    {#- Build column definitions with both name and data type for the CREATE DDL. -#}
     {%- set columns = adapter.get_columns_in_relation(staging) -%}
     {%- set col_defs = [] -%}
     {%- for col in columns -%}
         {%- do col_defs.append(col.quoted ~ ' ' ~ col.dtype) -%}
     {%- endfor -%}
 
-    {%- set hybrid_ddl -%}
+    {%- call statement('create_hybrid') -%}
         CREATE OR REPLACE HYBRID TABLE {{ relation }} (
             {{ col_defs | join(',\n            ') }},
             PRIMARY KEY ({{ pk_cols }})
         )
-    {%- endset -%}
+    {%- endcall -%}
 
-    {{ run_query(hybrid_ddl) }}
-
-    {{ run_query(
-        "INSERT INTO " ~ relation ~ " SELECT * FROM " ~ staging
-    ) }}
+    {%- call statement('main') -%}
+        INSERT INTO {{ relation }} SELECT * FROM {{ staging }}
+    {%- endcall -%}
 
     {{ return({'relations': [relation]}) }}
 
