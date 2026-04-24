@@ -4,7 +4,7 @@
     {%- set model_sql = sql -%}
 
     {{ run_query(
-        create_table_as(
+        sf_create_table_as(
             relation  = relation,
             sql       = model_sql,
             table_type = 'temporary'
