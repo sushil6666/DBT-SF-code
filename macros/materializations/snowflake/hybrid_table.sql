@@ -20,8 +20,13 @@
 
     {%- set staging = make_temp_relation(this) -%}
 
+<<<<<<< HEAD
     {%- call statement('create_staging') -%}
         {{ create_table_as(
+=======
+    {{ run_query(
+        sf_create_table_as(
+>>>>>>> 7a0c6dc07c1dc19917e3cb830bbcba85bd421400
             relation   = staging,
             sql        = model_sql,
             table_type = 'temporary'

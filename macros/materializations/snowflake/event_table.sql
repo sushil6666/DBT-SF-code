@@ -21,7 +21,7 @@
     {%- set extra_ddl = extra_props | join('\n') -%}
 
     {{ run_query(
-        create_table_as(
+        sf_create_table_as(
             relation   = relation,
             sql        = '',
             table_type = 'event',

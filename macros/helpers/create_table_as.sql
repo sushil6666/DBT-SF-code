@@ -1,4 +1,4 @@
-{% macro create_table_as(relation, sql, table_type='table', extra_ddl='') %}
+{% macro sf_create_table_as(relation, sql, table_type='table', extra_ddl='') %}
 
     {%- set table_type_clause -%}
         {%- if table_type | lower == 'temporary' -%}
