@@ -1,0 +1,66 @@
+{{
+    config(
+        materialized         = 'incremental',
+        incremental_strategy = 'delete+insert',
+        unique_key           = 'visit_date',
+        cluster_by           = ['visit_date'],
+        tags                 = ['macro_demo', 'demo_23', 'incremental', 'delete_insert']
+    )
+}}
+
+{#
+  STRATEGY: delete+insert
+  -----------------------------------------------------------------------
+  Builds a daily visit summary. Each run replaces the last 3 days of
+  data so that late-arriving source corrections (re-stated visit records)
+  are always reflected.
+
+  HOW IT WORKS:
+    1. dbt DELETEs all rows in the target where visit_date matches any
+       value in the incoming source batch (the last 3 days).
+    2. dbt INSERTs the freshly-aggregated rows for those same dates.
+    Both steps run inside a single transaction.
+
+  PARTITION COLUMN (unique_key = 'visit_date'):
+    unique_key here is the PARTITION boundary, not a row-level PK.
+    All rows sharing a visit_date value are deleted and rewritten together.
+    Do NOT set unique_key to a high-cardinality column (e.g. ticket_id)
+    — that triggers one DELETE per row, which is as expensive as a full merge.
+
+  LOOK-BACK WINDOW (max(visit_date) - 3 days):
+    Source data for T-1 and T-2 may arrive up to 3 days late.
+    Reprocessing a 3-day window ensures corrections are absorbed.
+    Tune this value to match your upstream SLA.
+
+  CLUSTER_BY visit_date:
+    Without clustering, the DELETE scans the entire table for matching
+    micro-partitions. Clustering limits the scan to the 3-day window.
+#}
+
+with daily_visits as (
+
+    select
+        visit_date,
+        ticket_type,
+        count(distinct customer_id)     as unique_visitors,
+        count(ticket_id)                as total_visits,
+        sum(ticket_price)               as total_ticket_revenue,
+        sum(in_park_spend)              as total_in_park_spend,
+        sum(total_visit_spend)          as total_visit_spend,
+        avg(avg_rating)                 as avg_satisfaction_rating,
+        min(ticket_price)               as min_ticket_price,
+        max(ticket_price)               as max_ticket_price
+    from {{ ref('fct_visits') }}
+
+    {% if is_incremental() %}
+        -- Reload the last 3 days to absorb upstream corrections and late arrivals
+        where visit_date >= (
+            select dateadd('day', -3, coalesce(max(visit_date), current_date())) from {{ this }}
+        )
+    {% endif %}
+
+    group by 1, 2
+
+)
+
+select * from daily_visits
