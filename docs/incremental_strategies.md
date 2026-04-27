@@ -919,3 +919,92 @@ where updated_at > (select max(updated_at) from {{ this }})
 ```
 
 **Fix:** Use strict greater-than `>` for timestamp watermarks. The boundary row was already loaded in the previous run.
+
+---
+
+## Sample Data Seeds
+
+Five CSV seed files live in `seeds/macro_demos/` — one per incremental strategy demo.
+Load them all with:
+
+```bash
+dbt seed --select demo_21_sample_merge demo_22_sample_append demo_23_sample_delete_insert demo_24_sample_insert_overwrite demo_25_sample_microbatch
+```
+
+They land in the `macro_demos_sample` schema in Snowflake and are independent of the
+live fact tables. Use them to inspect the expected output shape of each model without
+running a full dbt build.
+
+### Seed → Demo Mapping
+
+| Seed file | Demo model | Strategy | Source fact table | Rows |
+|---|---|---|---|---|
+| `demo_21_sample_merge.csv` | `demo_21_incremental_merge` | `merge` | `fct_all_ticket_sales` | 10 |
+| `demo_22_sample_append.csv` | `demo_22_incremental_append` | `append` | `fct_sales` | 10 |
+| `demo_23_sample_delete_insert.csv` | `demo_23_incremental_delete_insert` | `delete+insert` | `fct_visits` | 8 |
+| `demo_24_sample_insert_overwrite.csv` | `demo_24_incremental_insert_overwrite` | `insert_overwrite` | `fct_sales` | 9 |
+| `demo_25_sample_microbatch.csv` | `demo_25_incremental_microbatch` | `microbatch` | `fct_all_ticket_sales` | 10 |
+
+---
+
+### demo_21_sample_merge.csv — merge
+
+Represents the **target table state after an incremental merge** on `fct_all_ticket_sales`.
+
+- `unique_key = sale_id` — one row per ticket sale; duplicates trigger UPDATE, not INSERT
+- `merge_update_columns` covers `ticket_price`, `discount_percent`, `discount_category`, `updated_at` only — `created_at` is never overwritten
+- Rows **SL1003** and **SL1005** have `updated_at` newer than `created_at`, showing the MATCHED → UPDATE branch: price was corrected after the initial sale
+- `incremental_predicates` limits the MERGE scan to the last 90 days of the target table (`DBT_INTERNAL_DEST.purchase_date >= dateadd('day', -90, current_date())`)
+
+Key columns: `sale_id`, `purchase_date`, `visit_date`, `ticket_price`, `discount_category`, `visit_time_category`, `business_season`, `created_at`, `updated_at`
+
+---
+
+### demo_22_sample_append.csv — append
+
+Represents a **growing immutable ledger** of in-park sales transactions from `fct_sales`.
+
+- No `unique_key` — pure `INSERT INTO ... SELECT`, no MERGE overhead
+- `_loaded_at` is stamped at query execution time; compare batches with the same `visit_date` range to detect accidental pipeline replays
+- `full_refresh = false` is set on the model — the seed mirrors this by covering multiple `visit_date` batches that should never be wiped
+- Rows are grouped into 4 distinct visit-date batches (Oct 31, Nov 2, Dec 24, Jan 11, Mar 22) showing how the ledger grows over time
+
+Key columns: `sales_key`, `transaction_id`, `visit_date`, `category`, `total_amount`, `_loaded_at`
+
+---
+
+### demo_23_sample_delete_insert.csv — delete+insert
+
+Represents a **daily aggregated visit summary** produced by `demo_23_incremental_delete_insert` from `fct_visits`.
+
+- `unique_key = visit_date` is the **partition boundary**, not a row-level PK — all rows sharing a `visit_date` are deleted and rewritten together
+- 8 rows span 4 consecutive days (Oct 31 – Nov 3) × 2 `ticket_type` values, showing the partition shape
+- Each run reprocesses the last 3 days from the target's `max(visit_date)` to absorb late-arriving visit records
+
+Key columns: `visit_date`, `ticket_type`, `unique_visitors`, `total_visits`, `total_ticket_revenue`, `avg_satisfaction_rating`
+
+---
+
+### demo_24_sample_insert_overwrite.csv — insert_overwrite
+
+Represents a **monthly revenue rollup** produced by `demo_24_incremental_insert_overwrite` from `fct_sales`.
+
+- `revenue_month` is always the **first day of the month** (result of `date_trunc('month', visit_date)`) — this is the overwrite partition key
+- `cluster_by = ['revenue_month']` on the model is **required**; without it, INSERT OVERWRITE replaces the entire table on every run
+- 9 rows span Oct 2024, Nov 2024, Dec 2024, Jan 2025 across different category/location/payment_method slices
+- On each run only the current month and prior month partitions are overwritten; older months remain untouched
+
+Key columns: `revenue_month`, `category`, `location`, `payment_method`, `total_revenue`, `unique_customers`
+
+---
+
+### demo_25_sample_microbatch.csv — microbatch
+
+Represents **one daily batch window** of ticket sales produced by `demo_25_incremental_microbatch` from `fct_all_ticket_sales`.
+
+- `event_time = 'purchase_ts'` — dbt injects `WHERE purchase_ts >= batch_start AND purchase_ts < batch_end` automatically; **no `is_incremental()` block in the model**
+- `purchase_ts` = `purchase_date::TIMESTAMP_NTZ` (source column `purchase_timestamp` is NULL; the alias is derived in the SELECT)
+- All 10 rows have `purchase_date` in the Oct 15–24 2024 range, matching the `begin = '2024-10-01'` config and the bounded `--event-time-start / --event-time-end` range used on first load
+- `lookback = 3` means the last 3 completed day batches are reprocessed on every run to absorb late-arriving source rows
+
+Key columns: `sale_id`, `purchase_date`, `purchase_ts`, `visit_date`, `discount_category`, `business_season`

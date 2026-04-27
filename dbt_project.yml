@@ -95,6 +95,91 @@ seeds:
         event_type: varchar
         external_partner: varchar
         description: varchar
+    macro_demos:
+      +schema: macro_demos_sample
+      +quote_columns: false
+      demo_21_sample_merge:
+        +column_types:
+          sale_id: varchar
+          customer_id: varchar
+          ticket_id: varchar
+          purchase_date: date
+          visit_date: date
+          ticket_price: number(10,2)
+          discount_percent: number(5,2)
+          discount_category: varchar
+          visit_hour: integer
+          payment_method: varchar
+          purchase_channel: varchar
+          is_online: boolean
+          same_day_visit: boolean
+          advance_purchase: boolean
+          visit_time_category: varchar
+          business_season: varchar
+          created_at: timestamp_ntz
+          updated_at: timestamp_ntz
+      demo_22_sample_append:
+        +column_types:
+          sales_key: varchar
+          transaction_id: varchar
+          customer_id: varchar
+          visit_date: date
+          day_of_week: varchar
+          month_name: varchar
+          quarter: integer
+          year: integer
+          is_weekend: boolean
+          category: varchar
+          item_name: varchar
+          quantity: integer
+          unit_price: number(10,2)
+          total_amount: number(10,2)
+          payment_method: varchar
+          location: varchar
+          _loaded_at: timestamp_ntz
+      demo_23_sample_delete_insert:
+        +column_types:
+          visit_date: date
+          ticket_type: varchar
+          unique_visitors: integer
+          total_visits: integer
+          total_ticket_revenue: number(12,2)
+          total_in_park_spend: number(12,2)
+          total_visit_spend: number(12,2)
+          avg_satisfaction_rating: number(4,2)
+          min_ticket_price: number(10,2)
+          max_ticket_price: number(10,2)
+      demo_24_sample_insert_overwrite:
+        +column_types:
+          revenue_month: date
+          category: varchar
+          location: varchar
+          payment_method: varchar
+          total_revenue: number(14,2)
+          total_units_sold: integer
+          total_transactions: integer
+          unique_customers: integer
+          avg_transaction_value: number(10,2)
+          max_transaction_value: number(10,2)
+      demo_25_sample_microbatch:
+        +column_types:
+          sale_id: varchar
+          customer_id: varchar
+          ticket_id: varchar
+          purchase_date: date
+          purchase_ts: timestamp_ntz
+          visit_date: date
+          ticket_price: number(10,2)
+          discount_percent: number(5,2)
+          discount_category: varchar
+          payment_method: varchar
+          purchase_channel: varchar
+          is_online: boolean
+          same_day_visit: boolean
+          advance_purchase: boolean
+          visit_time_category: varchar
+          business_season: varchar
+          updated_at: timestamp_ntz
 
 snapshots:
   dbt_practice:
