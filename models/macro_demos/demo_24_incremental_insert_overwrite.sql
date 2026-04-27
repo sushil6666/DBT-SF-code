@@ -2,6 +2,7 @@
     config(
         materialized         = 'incremental',
         incremental_strategy = 'insert_overwrite',
+        on_schema_change     = 'sync_all_columns',
         cluster_by           = ['revenue_month'],
         tags                 = ['macro_demo', 'demo_24', 'incremental', 'insert_overwrite']
     )
@@ -33,6 +34,12 @@
     Recomputes the current month (in-progress data) and the prior month
     (absorbs corrections to already-closed monthly figures).
     date_trunc('month', ...) ensures the filter aligns to partition edges.
+
+  on_schema_change = 'sync_all_columns':
+    Because partitions are fully overwritten, adding a new column
+    upstream will appear correctly in the rewritten partitions.
+    Unaffected historical month-partitions will have NULL for the new
+    column until they are next included in an overwrite window.
 #}
 
 with monthly_revenue as (

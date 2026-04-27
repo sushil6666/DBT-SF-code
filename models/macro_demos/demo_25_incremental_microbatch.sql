@@ -6,6 +6,7 @@
         batch_size           = 'day',
         lookback             = 3,
         begin                = '2024-10-01',
+        on_schema_change     = 'sync_all_columns',
         cluster_by           = ['purchase_date'],
         tags                 = ['macro_demo', 'demo_25', 'incremental', 'microbatch']
     )
@@ -47,6 +48,20 @@
   CLUSTER_BY purchase_date:
     Aligns Snowflake micro-partitions to daily batch boundaries, minimising
     bytes scanned per batch query.
+
+  on_schema_change = 'sync_all_columns':
+    Because Snowflake runs microbatch as delete+insert under the hood,
+    each batch window is fully replaced. New upstream columns will appear
+    in reprocessed batches; historical batches outside the lookback window
+    will have NULL until next reprocessed.
+
+  Snowflake microbatch internals:
+    On Snowflake, dbt implements microbatch using the delete+insert
+    strategy under the hood — each batch deletes rows in the window
+    then inserts the recomputed results. Retry a specific failed batch:
+      dbt run --select demo_25_incremental_microbatch \
+               --event-time-start '2024-11-01' \
+               --event-time-end   '2024-11-02'
 #}
 
 select

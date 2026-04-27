@@ -3,6 +3,7 @@
         materialized         = 'incremental',
         incremental_strategy = 'delete+insert',
         unique_key           = 'visit_date',
+        on_schema_change     = 'sync_all_columns',
         cluster_by           = ['visit_date'],
         tags                 = ['macro_demo', 'demo_23', 'incremental', 'delete_insert']
     )
@@ -35,6 +36,12 @@
   CLUSTER_BY visit_date:
     Without clustering, the DELETE scans the entire table for matching
     micro-partitions. Clustering limits the scan to the 3-day window.
+
+  on_schema_change = 'sync_all_columns':
+    Because each partition is deleted and fully rewritten, a new column
+    added upstream will safely appear in rewritten partitions.
+    sync_all_columns is appropriate here — no historical rows are preserved
+    between runs that could be left with NULL in the new column.
 #}
 
 with daily_visits as (

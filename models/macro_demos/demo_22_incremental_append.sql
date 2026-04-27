@@ -2,6 +2,8 @@
     config(
         materialized         = 'incremental',
         incremental_strategy = 'append',
+        on_schema_change     = 'append_new_columns',
+        full_refresh         = false,
         cluster_by           = ['visit_date'],
         tags                 = ['macro_demo', 'demo_22', 'incremental', 'append']
     )
@@ -27,6 +29,17 @@
     Audit column stamped at query time. Allows detecting rows that were
     accidentally re-ingested (e.g., pipeline replay) by comparing
     _loaded_at batches for the same visit_date range.
+
+  on_schema_change = 'append_new_columns':
+    New columns added upstream will be added to the target table on the
+    next run. 'sync_all_columns' is intentionally avoided here — removing
+    a column from an append-only ledger would destroy historical data.
+
+  full_refresh = false:
+    Prevents dbt run --full-refresh from truncating and rebuilding this
+    table. An append-only ledger must never be wiped; this config makes
+    that guarantee explicit. Overriding requires deleting the target table
+    directly in Snowflake.
 
   DO NOT use append for mutable sources (orders, users, subscriptions).
   Any column that changes after insertion makes append produce stale data.

@@ -1,11 +1,13 @@
 {{
     config(
-        materialized         = 'incremental',
-        incremental_strategy = 'merge',
-        unique_key           = 'sale_id',
-        merge_update_columns = ['ticket_price', 'discount_percent', 'discount_category', 'updated_at'],
-        cluster_by           = ['purchase_date'],
-        tags                 = ['macro_demo', 'demo_21', 'incremental', 'merge']
+        materialized          = 'incremental',
+        incremental_strategy  = 'merge',
+        unique_key            = 'sale_id',
+        merge_update_columns  = ['ticket_price', 'discount_percent', 'discount_category', 'updated_at'],
+        on_schema_change      = 'sync_all_columns',
+        incremental_predicates = ["DBT_INTERNAL_DEST.purchase_date >= dateadd('day', -90, current_date())"],
+        cluster_by            = ['purchase_date'],
+        tags                  = ['macro_demo', 'demo_21', 'incremental', 'merge']
     )
 }}
 
@@ -29,6 +31,18 @@
 
   merge_update_columns prevents created_at from being overwritten
   on every MATCHED row, which would destroy the original insert time.
+
+  on_schema_change = 'sync_all_columns':
+    When a new column is added to fct_all_ticket_sales it will
+    automatically appear in the target on the next run. Removed columns
+    are also dropped. Use 'append_new_columns' if you want to keep
+    old columns when upstream removes them.
+
+  incremental_predicates:
+    Limits the scan of the EXISTING target table during the MERGE.
+    DBT_INTERNAL_DEST is the alias dbt assigns to the target table.
+    Without this, Snowflake must scan all historical rows to find matches.
+    Set to 90 days — tune to the max realistic age of an updated row.
 #}
 
 with source as (
