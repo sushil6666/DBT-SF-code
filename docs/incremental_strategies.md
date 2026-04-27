@@ -703,14 +703,27 @@ order by 1;
 | Topic | Snowflake | BigQuery | Spark |
 |-------|-----------|---------|-------|
 | Native partitions | No (clustering-based) | Yes (PARTITION BY) | Yes (PARTITION BY) |
-| `insert_overwrite` | Clustering-scoped | Partition-scoped DDL | Partition-scoped DDL |
+| `insert_overwrite` | Truncate + re-insert (WHERE-clause scoped) | Partition-scoped DDL | Partition-scoped DDL |
 | MERGE atomicity | Single statement | Single statement | Multiple tasks |
 | Concurrency | Multi-cluster warehouse | Slot-based | Executor-based |
 | `microbatch` | dbt-layer loop | dbt-layer loop | dbt-layer loop |
 
-### Insert_overwrite — Not a Native Snowflake Feature
+### Insert_overwrite on Snowflake — Truncate + Re-insert
 
-Snowflake does not have BigQuery's `WRITE_TRUNCATE` partition behavior. The dbt adapter emits `INSERT OVERWRITE INTO`, which in Snowflake means "replace all rows matched by the clustering key range". Without clustering, it replaces the **entire table** — making it equivalent to a full refresh. Always define `cluster_by` when using this strategy.
+The dbt docs describe `insert_overwrite` on Snowflake as behaving like **truncate + re-insert**, not as a partition-scoped operation. The adapter emits `INSERT OVERWRITE INTO <target> SELECT ...`, which deletes all rows in the destination and reinserts whatever the SELECT returns.
+
+**What controls the scope of the overwrite** is the `is_incremental()` WHERE clause in your model — not the clustering key. A model with a filter like `WHERE visit_date >= date_trunc('month', dateadd('month', -1, current_date()))` will only replace rows in that window. A model with no filter will replace the entire table.
+
+**What `cluster_by` does** is purely a performance optimisation: it lets Snowflake prune micro-partitions before scanning, reducing bytes read during the overwrite. It does not change which rows get replaced.
+
+| Scenario | Outcome |
+|---|---|
+| `is_incremental()` filter present | Only the filtered rows are replaced — correct behaviour |
+| No `is_incremental()` filter | Entire table is truncated and rebuilt on every run |
+| `cluster_by` present | Micro-partition pruning speeds up the overwrite — same correctness |
+| No `cluster_by` | Full micro-partition scan — slower, but same correctness as above |
+
+**Differences vs BigQuery:** BigQuery's `INSERT OVERWRITE` is natively partition-scoped via `PARTITION BY` columns. Snowflake has no named partitions, so the overwrite scope is always determined by the SQL WHERE clause, not by a partition key.
 
 ### Micro-Partition Considerations
 
@@ -728,7 +741,7 @@ Snowflake automatically divides tables into compressed micro-partitions (~16MB e
 | `merge` | `[updated_at::date]` or `[surrogate_key]` (for small tables) |
 | `append` | `[event_date]` or `[date(occurred_at)]` |
 | `delete+insert` | `[partition_col]` — **required** |
-| `insert_overwrite` | `[partition_col]` — **required** |
+| `insert_overwrite` | `[partition_col]` — strongly recommended for performance, not required for correctness |
 | `microbatch` | `[date(event_time)]` — aligned to batch windows |
 
 ---

@@ -16,19 +16,21 @@
   then overwrites those two partitions in the target table.
 
   HOW IT WORKS (Snowflake adapter):
-    Snowflake does NOT have BigQuery-style named partitions.
-    The adapter issues: INSERT OVERWRITE INTO <target> SELECT ... FROM <source>
-    Snowflake uses the cluster_by column to identify which micro-partitions
-    to overwrite. Without cluster_by this would replace the ENTIRE table.
+    dbt implements insert_overwrite on Snowflake as truncate + re-insert:
+      INSERT OVERWRITE INTO <target> SELECT ... FROM <source>
+    This deletes all rows in the target and reinserts whatever the SELECT
+    returns. The scope of the overwrite is determined by the is_incremental()
+    WHERE clause below — not by cluster_by. cluster_by is a performance
+    optimisation (micro-partition pruning), not a correctness requirement.
 
   WHY INSERT OVERWRITE OVER DELETE+INSERT HERE:
     Monthly aggregates are fully recomputed from scratch — every row in
-    the month partition is recalculated. insert_overwrite expresses this
-    intent more directly and avoids a separate DELETE statement.
+    the month window is recalculated. insert_overwrite expresses this
+    intent directly and avoids a separate DELETE statement.
 
-  CLUSTER_BY revenue_month — REQUIRED:
-    This is not optional. Without it, INSERT OVERWRITE replaces all rows
-    in the table on every run, making it equivalent to a full refresh.
+  CLUSTER_BY revenue_month — strongly recommended for performance:
+    Without it, Snowflake must scan all micro-partitions during the overwrite.
+    With it, Snowflake prunes to only the partitions touched by the WHERE filter.
 
   FILTER LOGIC:
     Recomputes the current month (in-progress data) and the prior month
