@@ -178,6 +178,14 @@ seeds:
           - not_null
 
   - name: demo_23_sample_delete_insert
+    config:
+      column_types:
+        total_ticket_revenue: float
+        total_in_park_spend: float
+        total_visit_spend: float
+        avg_satisfaction_rating: float
+        min_ticket_price: float
+        max_ticket_price: float
     description: >
       Demo model: models/macro_demos/demo_23_incremental_delete_insert.sql | Strategy: delete+insert | Source: fct_visits.
       Sample output rows for the daily aggregated visit summary. unique_key=visit_date is the
@@ -229,6 +237,11 @@ seeds:
           - not_null
 
   - name: demo_24_sample_insert_overwrite
+    config:
+      column_types:
+        total_revenue: float
+        avg_transaction_value: float
+        max_transaction_value: float
     description: >
       Demo model: models/macro_demos/demo_24_incremental_insert_overwrite.sql | Strategy: insert_overwrite | Source: fct_sales.
       Sample output rows for the monthly revenue rollup. revenue_month is always the first of the

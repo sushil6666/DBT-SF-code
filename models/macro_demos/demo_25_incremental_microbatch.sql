@@ -69,7 +69,7 @@ select
     customer_id,
     ticket_id,
     purchase_date,
-    purchase_date::timestamp            as purchase_ts,
+    purchase_ts,
     visit_date,
     ticket_price,
     discount_percent,
@@ -82,4 +82,4 @@ select
     visit_time_category,
     business_season,
     updated_at
-from {{ ref('fct_all_ticket_sales') }}
+from {{ ref('demo_25_sample_microbatch') }}

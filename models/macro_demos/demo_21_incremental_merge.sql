@@ -66,7 +66,7 @@ with source as (
         business_season,
         created_at,
         updated_at
-    from {{ ref('fct_all_ticket_sales') }}
+    from {{ ref('demo_21_sample_merge') }}
 
     {% if is_incremental() %}
         -- Only fetch rows newer than the latest record already in the target.

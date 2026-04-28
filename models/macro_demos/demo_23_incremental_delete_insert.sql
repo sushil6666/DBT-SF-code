@@ -49,15 +49,15 @@ with daily_visits as (
     select
         visit_date,
         ticket_type,
-        count(distinct customer_id)     as unique_visitors,
-        count(ticket_id)                as total_visits,
-        sum(ticket_price)               as total_ticket_revenue,
-        sum(in_park_spend)              as total_in_park_spend,
-        sum(total_visit_spend)          as total_visit_spend,
-        avg(avg_rating)                 as avg_satisfaction_rating,
-        min(ticket_price)               as min_ticket_price,
-        max(ticket_price)               as max_ticket_price
-    from {{ ref('fct_visits') }}
+        unique_visitors,
+        total_visits,
+        total_ticket_revenue,
+        total_in_park_spend,
+        total_visit_spend,
+        avg_satisfaction_rating,
+        min_ticket_price,
+        max_ticket_price
+    from {{ ref('demo_23_sample_delete_insert') }}
 
     {% if is_incremental() %}
         -- Reload the last 3 days to absorb upstream corrections and late arrivals
@@ -65,8 +65,6 @@ with daily_visits as (
             select dateadd('day', -3, coalesce(max(visit_date), current_date())) from {{ this }}
         )
     {% endif %}
-
-    group by 1, 2
 
 )
 

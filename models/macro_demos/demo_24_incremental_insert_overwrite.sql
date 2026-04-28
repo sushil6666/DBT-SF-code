@@ -47,28 +47,26 @@
 with monthly_revenue as (
 
     select
-        date_trunc('month', visit_date)                 as revenue_month,
+        revenue_month,
         category,
         location,
         payment_method,
-        sum(total_amount)                               as total_revenue,
-        sum(quantity)                                   as total_units_sold,
-        count(distinct transaction_id)                  as total_transactions,
-        count(distinct customer_id)                     as unique_customers,
-        avg(total_amount)                               as avg_transaction_value,
-        max(total_amount)                               as max_transaction_value
-    from {{ ref('fct_sales') }}
+        total_revenue,
+        total_units_sold,
+        total_transactions,
+        unique_customers,
+        avg_transaction_value,
+        max_transaction_value
+    from {{ ref('demo_24_sample_insert_overwrite') }}
 
     {% if is_incremental() %}
         -- Recompute the current month and the previous month.
         -- date_trunc aligns the filter to partition boundaries so the
         -- overwrite covers exactly the two partitions being refreshed.
-        where visit_date >= date_trunc(
+        where revenue_month >= date_trunc(
             'month', dateadd('month', -1, current_date())
         )
     {% endif %}
-
-    group by 1, 2, 3, 4
 
 )
 

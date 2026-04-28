@@ -64,8 +64,8 @@ with source as (
         total_amount,
         payment_method,
         location,
-        current_timestamp()     as _loaded_at
-    from {{ ref('fct_sales') }}
+        _loaded_at
+    from {{ ref('demo_22_sample_append') }}
 
     {% if is_incremental() %}
         where visit_date > (
